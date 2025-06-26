@@ -53,3 +53,4 @@ celerybeat-schedule
 Lib
 Scripts
 pyvenv.cfg
+.env

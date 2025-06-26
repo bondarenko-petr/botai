@@ -2,13 +2,15 @@ import os
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 from dotenv import load_dotenv
-import openai
+from openai import OpenAI
 
 # Загружаем токены из .env
 load_dotenv()
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-openai.api_key = OPENAI_API_KEY
+
+# Создаём клиента OpenAI
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 # Загружаем текст с информацией для поступающих
 with open("data/programs.txt", "r", encoding="utf-8") as f:
@@ -20,13 +22,13 @@ async def ask_openai(question: str) -> str:
         {"role": "system", "content": "Ты помощник приёмной комиссии. Отвечай только на основе информации ниже."},
         {"role": "user", "content": f"{admission_info}\n\nВопрос: {question}"}
     ]
-    response = openai.ChatCompletion.create(
-        model="gpt-4",  # Можно заменить на gpt-3.5-turbo
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
         messages=messages,
         temperature=0.2,
         max_tokens=700,
     )
-    return response["choices"][0]["message"]["content"].strip()
+    return response.choices[0].message.content.strip()
 
 # Команда /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
