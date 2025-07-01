@@ -4,30 +4,36 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, Con
 from dotenv import load_dotenv
 import google.generativeai as genai
 
-# Загрузка токенов
 load_dotenv()
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# Настройка Gemini
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel("models/gemini-1.5-flash")
+model = genai.GenerativeModel("models/gemini-2.5-flash")
 
-# Загрузка справочной информации
-with open("data/programs.txt", "r", encoding="utf-8") as f:
+with open("data/programs.json", "r", encoding="utf-8") as f:
     admission_info = f.read()
 
-# Функция запроса к Gemini
 async def ask_gemini(question: str) -> str:
-    prompt_text = f"""Ты помощник приемной комиссии. Используй только эту информацию при ответе:\n\n{admission_info}\n\nВопрос: {question}"""
+    prompt_text = f"""
+Ты помощник приёмной комиссии Волгоградского государственного университета.
+Используй только эту информацию для ответа:
+{admission_info}
+
+Вопрос: {question}
+
+Если в этих данных нет точного ответа, сделай поиск через Google 
+только по направлениям подготовки в университетах и возможным профессиям выпускников.
+Не выдумывай, не уходи в посторонние темы.
+
+Ответ:
+"""
     response = model.generate_content(prompt_text)
     return response.text.strip()
 
-# Команда /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Привет! Я ассистент приёмной комиссии. Задай вопрос.")
+    await update.message.reply_text("Привет! Я помощник приёмной комиссии. Задай вопрос.")
 
-# Обработка сообщений
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     question = update.message.text
     await update.message.reply_text("Секунду, думаю...")
@@ -38,7 +44,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"Ошибка: {e}")
 
-# Запуск бота
 if __name__ == "__main__":
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
